@@ -73,21 +73,12 @@ class GenerateLabelmeFormat(object):
     def create_label(self, json_file, image_file, prefix):
 
         if not os.path.exists(json_file) or not os.path.exists(image_file):
-            print('【警告】文件不存在')
-            print(image_file)
-            print(json_file)
+            print('【警告】文件不存在  --------file:  {} '.format(json_file))
+            #print(image_file)
+            #print(json_file)
             return
-
-
-
 
         base_dir = '/'.join(json_file.split('/')[:-1])
-
-
-        if not os.path.exists(json_file):
-            print("【警告】 文件不存在 {} ".format(json_file))
-            return
-
 
         label_image_file = os.path.join(base_dir, "image_label.jpg")
         label_gt_file = os.path.join(base_dir, "label_gt.txt")
@@ -110,11 +101,11 @@ class GenerateLabelmeFormat(object):
 
         data = json.loads(''.join(lines))
         if 'error_code' in data.keys():
-            print("error_code[{}]  :  {} --- 文件： {} ".format(data['error_code'], data['error_msg'], json_file))
+            print("【警告】error_code[{}]: [{}] --- 文件： {} ".format(data['error_code'], data['error_msg'], json_file))
             return
 
         if 'words_result' not in data.keys():
-            print(" words_result 为空")
+            print("【警告】 words_result 为空")
             return
 
 
