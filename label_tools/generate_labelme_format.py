@@ -78,6 +78,8 @@ class GenerateLabelmeFormat(object):
             print(json_file)
 
 
+
+
         base_dir = '/'.join(json_file.split('/')[:-1])
 
         label_image_file = os.path.join(base_dir, "image_label.jpg")
@@ -100,6 +102,16 @@ class GenerateLabelmeFormat(object):
             lines = f.readlines()
 
         data = json.loads(''.join(lines))
+        if 'error_code' in data.keys():
+            print("error_code[{}]  :  {} --- 文件： {} ".format(data['error_code'], data['error_msg'], json_file))
+            return
+
+        if 'words_result' not in data.keys():
+            print(" words_result 为空")
+            return
+
+
+
         #print("file: {}    word count: {} ".format(json_file, len(data['words_result'])))
 
         bg_image = cv2.imread(image_file)
