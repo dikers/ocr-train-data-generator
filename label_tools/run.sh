@@ -1,7 +1,17 @@
+echo $#  '生成ocr训练数据'
+if [ $# -ne 1 ]
+then
+    echo "Usage: $0  包含图片的文件夹 "
+    exit
+fi
+
+
 export PYTHONPATH=../
 
+
+
 python ../label_tools/ocr.py \
---input_dir='../dataset/' \
+--input_dir=$1 \
 --output_dir='../target/' \
 --app_id='' \
 --api_key='' \
