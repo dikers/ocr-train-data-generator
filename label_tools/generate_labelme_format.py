@@ -73,14 +73,21 @@ class GenerateLabelmeFormat(object):
     def create_label(self, json_file, image_file, prefix):
 
         if not os.path.exists(json_file) or not os.path.exists(image_file):
-            print('【ERROR】文件不存在')
+            print('【警告】文件不存在')
             print(image_file)
             print(json_file)
+            return
 
 
 
 
         base_dir = '/'.join(json_file.split('/')[:-1])
+
+
+        if not os.path.exists(json_file):
+            print("【警告】 文件不存在 {} ".format(json_file))
+            return
+
 
         label_image_file = os.path.join(base_dir, "image_label.jpg")
         label_gt_file = os.path.join(base_dir, "label_gt.txt")

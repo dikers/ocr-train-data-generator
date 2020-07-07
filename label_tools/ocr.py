@@ -20,6 +20,8 @@ APP_ID = '你的 App ID'
 API_KEY = '你的 Api Key'
 SECRET_KEY = '你的 Secret Key'
 
+MAX_IMAGE_COUNT = 1
+
 
 class PreProcessingImage(object):
 
@@ -173,7 +175,7 @@ class PreProcessingImage(object):
         for files in types:
             files_grabbed.extend(glob.glob(os.path.join(input_dir, files)))
 
-        for file in files_grabbed:
+        for index, file in enumerate(files_grabbed):
             suid = ''.join(str(uuid.uuid4()).split('-'))
 
             file_output_dir = os.path.join(output_dir,
@@ -190,6 +192,8 @@ class PreProcessingImage(object):
                 shutil.copy(file, out_image_path)
 
             self.file_map[file_output_dir] = out_image_path
+
+
 
         print("共有文件{}个".format(len(self.file_map)))
 
@@ -209,6 +213,10 @@ class PreProcessingImage(object):
             # 切分成小图片 供文本识别使用
             if segment_flag:
                 self.create_gt_image_label(file_item[0])
+
+            if index >= MAX_IMAGE_COUNT:
+                print("【警告】最多识别图片数量{} , 退出".format(MAX_IMAGE_COUNT))
+                return
 
 
     def create_gt_image_label(self, base_dir):
