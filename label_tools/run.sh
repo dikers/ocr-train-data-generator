@@ -21,3 +21,7 @@ python ../label_tools/ocr.py \
 python ../label_tools/generate_labelme_format.py \
 --input_dir='../target/' \
 --output_dir='../output/'
+
+
+python ../label_tools/convert_encoding.py \
+--input_dir='../output/'
