@@ -20,7 +20,7 @@ APP_ID = '你的 App ID'
 API_KEY = '你的 Api Key'
 SECRET_KEY = '你的 Secret Key'
 
-MAX_IMAGE_COUNT = 1
+MAX_IMAGE_COUNT = 500
 
 
 class PreProcessingImage(object):
