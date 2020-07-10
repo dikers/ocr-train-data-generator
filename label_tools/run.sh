@@ -23,5 +23,4 @@ python ../label_tools/generate_labelme_format.py \
 --output_dir='../output/'
 
 
-python ../label_tools/convert_encoding.py \
---input_dir='../output/'
+python ../label_tools/convert_encoding.py --input_dir='../output/'
