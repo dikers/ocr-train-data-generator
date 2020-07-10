@@ -7,6 +7,9 @@ class ConvertEncoding(object):
     def __init__(self):
         args = self.parse_arguments()
         self.input_dir = args.input_dir
+        self.encoding = args.encoding
+        if self.encoding is None:
+            self.encoding = "utf-8"
 
     def parse_arguments(self):
         """
@@ -24,6 +27,14 @@ class ConvertEncoding(object):
             help="输入文件路径",
             required=True
         )
+        parser.add_argument(
+            "-e",
+            "--encoding",
+            type=str,
+            nargs="?",
+            help="输出文件编码格式",
+            required=False
+        )
         return parser.parse_args()
 
     def __doConvert(self, file):
@@ -36,16 +47,17 @@ class ConvertEncoding(object):
             f.write(file_data)
 
     def convert(self):
-        dir = self.input_dir
-        dir_list = os.listdir(dir)
-        for cur_file in dir_list:
-            if cur_file.endswith("json"):
-                self.__doConvert(cur_file)
+        if self.encoding == "utf-8":
+            print("输出格式为utf-8，不需要转化")
+        else:
+            dir = self.input_dir
+            dir_list = os.listdir(dir)
+            for cur_file in dir_list:
+                if cur_file.endswith("json"):
+                    self.__doConvert(cur_file)
+            print("已转化为"+self.encoding)
 
 
 if __name__ == "__main__":
-    if sys.platform == "win32":
-        convert = ConvertEncoding()
-        convert.convert()
-    else:
-        print("非windows环境，无需转化")
+    convert = ConvertEncoding()
+    convert.convert()

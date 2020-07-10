@@ -4,6 +4,7 @@ import os
 import argparse
 import json
 from shutil import copyfile
+import sys
 
 
 class ConvertLabelmeToTrain(object):
@@ -11,6 +12,9 @@ class ConvertLabelmeToTrain(object):
         args = self.parse_arguments()
         self.input_dir = args.input_dir
         self.output_dir = args.output_dir
+        self.encoding = args.encoding
+        if self.encoding is None:
+            self.encoding = "utf-8"
 
     def parse_arguments(self):
         """
@@ -36,10 +40,18 @@ class ConvertLabelmeToTrain(object):
             help="输出文件路径",
             required=True
         )
+        parser.add_argument(
+            "-e",
+            "--encoding",
+            type=str,
+            nargs="?",
+            help="输入文件编码格式",
+            required=False
+        )
         return parser.parse_args()
 
     def __loadSource(self,input_file):
-        with open(input_file, 'r') as file:
+        with open(input_file, 'r',encoding=self.encoding) as file:
             source = file.read()
         return source
 
