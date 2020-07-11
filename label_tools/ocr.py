@@ -170,7 +170,7 @@ class PreProcessingImage(object):
         :return:
         """
         # the tuple of file types
-        types = ('*.pdf', '*.jpg', '*.png', '*.jpeg')
+        types = ('*.pdf', '*.jpg', '*.png', '*.jpeg', '*.JPG', '*.PNG', '*.JPEG')
         files_grabbed = []
         for files in types:
             files_grabbed.extend(glob.glob(os.path.join(input_dir, files)))
