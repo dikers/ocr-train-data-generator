@@ -1,6 +1,7 @@
 import os
 import argparse
 import sys
+import glob
 
 
 class ConvertEncoding(object):
@@ -37,26 +38,25 @@ class ConvertEncoding(object):
         )
         return parser.parse_args()
 
-    def __doConvert(self, file):
-        src_file = os.path.join(self.input_dir, file)
+    def _do_convert(self, json_file, encoding):
+        print(json_file)
         file_data = ""
-        with open(src_file, 'r', encoding='utf-8') as f:
+        with open(json_file, 'r', encoding='utf-8') as f:
             for line in f:
                 file_data += line
-        with open(src_file, 'w', encoding='gbk') as f:
+        with open(json_file, 'w', encoding=encoding) as f:
             f.write(file_data)
 
     def convert(self):
         if self.encoding == "utf-8":
             print("输出格式为utf-8，不需要转化")
+        elif self.encoding == 'gbk':
+            json_list = glob.glob(os.path.join(self.input_dir, '*.json'))
+            for json_file in json_list:
+                self._do_convert(json_file, 'gbk')
+            print("{}个文件已转化为{} ".format(len(json_list), self.encoding))
         else:
-            dir = self.input_dir
-            dir_list = os.listdir(dir)
-            for cur_file in dir_list:
-                if cur_file.endswith("json"):
-                    self.__doConvert(cur_file)
-            print("已转化为"+self.encoding)
-
+            print("不能识别的编码格式 [{}]".format(self.encoding))
 
 if __name__ == "__main__":
     convert = ConvertEncoding()
