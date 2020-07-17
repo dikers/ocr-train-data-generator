@@ -9,7 +9,7 @@ import cv2
 import base64
 
 
-DEBUG = False
+DEBUG = True
 
 class GenerateLabelmeFormat(object):
 

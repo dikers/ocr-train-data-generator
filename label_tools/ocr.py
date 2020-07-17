@@ -211,6 +211,7 @@ class PreProcessingImage(object):
             print('No: {}  Path: {}  file: {} '.format(index,  file_item[0], file_item[1]))
             self.call_ocr_image(file_item[1], file_item[0])
             # 切分成小图片 供文本识别使用
+            print("----------------------------- ", segment_flag)
             if segment_flag:
                 self.create_gt_image_label(file_item[0])
 
