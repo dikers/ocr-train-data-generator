@@ -18,7 +18,7 @@ python ../label_tools/ocr.py \
 --secret_key=''
 
 
-python ../label_tools/generate_labelme_format.py \
+python ../label_tools/labelme_to_ocr_train.py \
 --input_dir='../target/' \
 --output_dir='../output/'
 

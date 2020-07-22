@@ -157,7 +157,7 @@ class GenerateLabelmeFormat(object):
             #print(line, end='')
             new_lines += line
 
-            colors = (0, 0, 255)
+            colors = (0, 255, 0)
             cv2.rectangle(bg_image, (left, top), (left+width, top+height), colors, 1)
 
             shape_item = {'label': text,
