@@ -2,11 +2,9 @@ import argparse
 import shutil
 import errno
 import time
-import json
 import glob
 import os
 import cv2
-import base64
 
 
 DEBUG = True
@@ -68,69 +66,26 @@ class MergeBox(object):
 
         if not os.path.exists(label_file) or not os.path.exists(image_file):
             print('【警告】文件不存在  --------file:  {} '.format(label_file))
-            #print(image_file)
-            #print(json_file)
             return
-
-        #########################
-        #
-        #########################
-        with open(image_file, 'rb') as f:
-            image = f.read()
-            image_base64 = str(base64.b64encode(image), encoding='utf-8')
-
-
 
         with open(label_file, 'r', encoding='utf-8') as f:
             lines = f.readlines()
 
-        # print("++++++++++++++++++++")
-        # print(len(lines))
-        # print(lines)
-        # print("++++++++++++++++++++")
         lines = self.do_merge_box(lines)
 
-        #print("file: {}    word count: {} ".format(json_file, len(data['words_result'])))
-
         bg_image = cv2.imread(image_file)
-        label_map = {"version": "4.0.0",
-                     'flags': {},
-                     "lineColor": [
-                         0,
-                         255,
-                         0,
-                         128
-                     ],
-                     "fillColor": [
-                         255,
-                         0,
-                         0,
-                         128
-                     ],
-                     'imagePath': image_file,
-                     'imageData': image_base64,
-                     'imageWidth': bg_image.shape[1],
-                     'imageHeight': bg_image.shape[0]}
 
         for index, line in enumerate(lines):
-            #print(line)
             if len(line) < 8:
                 continue
-            #
-            # 117,7,230,7,230,46,117,46
-            # print(item[1]['words'], item[1]['location'])
             points = line.split(',')
             left = int(points[0])
             width = int(points[2]) - int(points[0])
             top = int(points[1])
             height = int(points[7]) - int(points[1])
 
-            #print(line, end='')
-
-            colors = (0, 255, 0)
+            colors = (0, 0, 255)
             cv2.rectangle(bg_image, (left, top), (left+width, top+height), colors, 1)
-
-
 
         cv2.imwrite(label_image_file, bg_image)
         print('【输出】生成合格后的图片{} .'.format(label_image_file))
@@ -147,10 +102,8 @@ class MergeBox(object):
             box['bottom'],)
 
     def delete_row_in_list(self, new_lines, line):
-
         for index, new_line in enumerate(new_lines):
             if line == new_line:
-                print("find -------------------------- ", index)
                 new_lines.remove(line)
                 break
 
@@ -193,15 +146,13 @@ class MergeBox(object):
         for i in range(len(box_list)):
             if box_map[self.box_to_line(box_list[i])]:
                 continue
-
             merge_flag = False
 
             for j in range(len(box_list)):
                 if box_map[self.box_to_line(box_list[j])] or i == j:
                     continue
                 if box_list[j]['width'] < 150 \
-                        and box_list[i]['width'] < 150 \
-                        and abs(box_list[j]['left'] - box_list[i]['right']) < 7 \
+                        and abs(box_list[j]['left'] - box_list[i]['right']) < 9 \
                         and abs(box_list[j]['top'] - box_list[i]['top']) < 8 \
                         and abs(box_list[j]['bottom'] - box_list[i]['bottom']) < 8:
 
@@ -229,12 +180,14 @@ class MergeBox(object):
 
                     box_map[self.box_to_line(box_list[i])] = True
                     box_map[self.box_to_line(box_list[j])] = True
+                    self.delete_row_in_list(new_box_lines, self.box_to_line(box_list[i]))
+                    self.delete_row_in_list(new_box_lines, self.box_to_line(box_list[j]))
                     new_box_lines.append(self.box_to_line(new_box))
                     merge_flag = True
 
-                    print('{} === {} '.format(self.box_to_line(box_list[i]), self.box_to_line(box_list[j])))
+                    print(' 合并  {} === {} '.format(self.box_to_line(box_list[i]), self.box_to_line(box_list[j])))
                     total_count += 1
-            if not merge_flag:
+            if not merge_flag :
                 new_box_lines.append(self.box_to_line(box_list[i]))
 
         print("合并了 {}个 box".format(total_count))
@@ -244,9 +197,11 @@ class MergeBox(object):
 
     def do_merge_box(self, new_lines):
 
-        new_lines, total_count = self._do_merge_inline(new_lines)
-        new_lines, total_count = self._do_merge_inline(new_lines)
-        new_lines, total_count = self._do_merge_inline(new_lines)
+        max_merge_count = 5
+        for i in range(max_merge_count):
+            new_lines, total_count = self._do_merge_inline(new_lines)
+            if total_count == 0:
+                break
 
         return new_lines
 
