@@ -10,6 +10,13 @@ def _box_to_line(box):
         box['left'],
         box['bottom'],)
 
+def _delete_row_in_list(new_lines, line):
+
+    for index, new_line in enumerate(new_lines):
+        if line == new_line:
+            new_lines.remove(line)
+            break
+
 
 def _do_merge_inline(new_lines):
 
@@ -31,13 +38,12 @@ def _do_merge_inline(new_lines):
             'height': int(points[7]) - int(points[1]),
 
             'top': int(points[1]),
-            'bottom': int(points[7])
+            'bottom': int(points[7]),
+            'raw_line': line
         }
         box_list.append(box)
         box_map[_box_to_line(box)] = False
 
-    print("合并前Box 数量 : ", len(new_lines))
-    print("合并前Box 数量 : ", len(box_list))
     # for line in new_lines:
     #     print(line)
 
@@ -56,8 +62,8 @@ def _do_merge_inline(new_lines):
                 continue
             if box_list[j]['width'] < 150 \
                     and abs(box_list[j]['left'] - box_list[i]['right']) < 9 \
-                    and abs(box_list[j]['top'] - box_list[i]['top']) < 8 \
-                    and abs(box_list[j]['bottom'] - box_list[i]['bottom']) < 8:
+                    and abs(box_list[j]['top'] - box_list[i]['top']) < 9 \
+                    and abs(box_list[j]['bottom'] - box_list[i]['bottom']) < 9:
 
                 # 添加新的box ， 删除两个旧的box
 
@@ -83,16 +89,18 @@ def _do_merge_inline(new_lines):
 
                 box_map[_box_to_line(box_list[i])] = True
                 box_map[_box_to_line(box_list[j])] = True
+                _delete_row_in_list(new_box_lines, _box_to_line(box_list[i]))
+                _delete_row_in_list(new_box_lines, _box_to_line(box_list[j]))
                 new_box_lines.append(_box_to_line(new_box))
                 merge_flag = True
 
                 # print(' 合并  {} === {} '.format(box_to_line(box_list[i]), box_to_line(box_list[j])))
                 total_count += 1
         if not merge_flag:
-            new_box_lines.append(_box_to_line(box_list[i]))
+            new_box_lines.append(box_list[i]['raw_line'])
 
-    print("合并了 {}个 box".format(total_count))
-    print("总共 {}个 box".format(len(new_box_lines)))
+    #print("合并了 {}个 box".format(total_count))
+    #print("总共 {}个 box".format(len(new_box_lines)))
     return new_box_lines, total_count
 
 
@@ -106,3 +114,16 @@ def do_merge_box(new_lines):
 
     return new_lines
 
+def find_boundary_from_line(line):
+    """
+    从一行返回top  left  bottom  right
+    """
+    points = line.replace("\n", '').split(',')
+    left = int(points[0]) if int(points[6]) > int(points[0]) else int(points[6])
+    right = int(points[2]) if int(points[4]) < int(points[2]) else int(points[4])
+    top = int(points[1]) if int(points[3]) > int(points[1]) else int(points[3])
+    bottom = int(points[5]) if int(points[7]) < int(points[5]) else int(points[7])
+    height = bottom - top
+    width = right - left
+
+    return top, bottom, left, right

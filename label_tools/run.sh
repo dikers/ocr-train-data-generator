@@ -18,9 +18,12 @@ python ../label_tools/ocr.py \
 --secret_key=''
 
 
-python ../label_tools/labelme_to_ocr_train.py \
+python ../labelme_tools/labelme_to_ocr_train.py \
 --input_dir='../target/' \
 --output_dir='../output/'
 
 
 #python ../label_tools/convert_encoding.py --input_dir='../output/'
+
+python ../labelme_tools/convert_to_textract.py \
+--input_dir='../target/'
