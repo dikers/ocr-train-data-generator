@@ -1,159 +1,129 @@
-import argparse
-import shutil
-import errno
-import time
-import glob
-import os
-import cv2
-import numpy as np
 
-from merge_tools import do_merge_box
+def _box_to_line(box):
+    return '{},{},{},{},{},{},{},{}'.format(
+        box['left'],
+        box['top'],
+        box['right'],
+        box['top'],
+        box['right'],
+        box['bottom'],
+        box['left'],
+        box['bottom'],)
 
+def _delete_row_in_list(new_lines, line):
 
-DEBUG = True
-
-class MergeBox(object):
-
-    def __init__(self):
-        args = self.parse_arguments()
-        self.output_dir = args.output_dir
-        self.input_dir = args.input_dir
-
-    def parse_arguments(self):
-        """
-            Parse the command line arguments of the program.
-        """
-
-        parser = argparse.ArgumentParser(
-            description="生成labelme 格式数据"
-        )
-        parser.add_argument(
-            "-o",
-            "--output_dir",
-            type=str,
-            nargs="?",
-            help="输出文件的本地路径",
-            required=True
-        )
-        parser.add_argument(
-            "-i",
-            "--input_dir",
-            type=str,
-            nargs="?",
-            help="输入文件路径",
-            required=True
-        )
-
-        return parser.parse_args()
+    for index, new_line in enumerate(new_lines):
+        if line == new_line:
+            new_lines.remove(line)
+            break
 
 
-    def parse_file_list(self, input_dir, output_dir):
-        """
-        """
+def _do_merge_inline(new_lines):
 
-        label_file_list = glob.glob(os.path.join(input_dir, '*.txt'))
+    box_list = []
+    box_map = {}
+    new_lines.sort()
+    # 生成合并的box 框
+    for index, line in enumerate(new_lines):
+        line = line.replace("\n", '')
+        #print('index {}    [{}]'.format(index, line))
+        points = line.split(',')
+        if len(points) < 8:
+            continue
+        box = {
+            'left': int(points[0]),
+            'right': int(points[2]),
 
-        for label_file in label_file_list:
+            'width': int(points[2]) - int(points[0]),
+            'height': int(points[7]) - int(points[1]),
 
-            real_name = label_file.split('/')[-1].split('.')[0]
+            'top': int(points[1]),
+            'bottom': int(points[7]),
+            'raw_line': line
+        }
+        box_list.append(box)
+        box_map[_box_to_line(box)] = False
 
-            image_file = os.path.join(input_dir, "{}.jpg".format(real_name))
-            label_image_file = os.path.join(output_dir, "{}.jpg".format(real_name))
-            print(image_file)
-            if os.path.exists(image_file):
-                self.draw_box(label_file, image_file, label_image_file)
+    # for line in new_lines:
+    #     print(line)
 
+    # 查找临近的box， 本次合并的box 数量
+    total_count = 0
 
+    new_box_lines = []
+    for i in range(len(box_list)):
+        if box_map[_box_to_line(box_list[i])]:
+            continue
 
-    def draw_box(self, label_file, image_file, label_image_file):
+        merge_flag = False
 
-        if not os.path.exists(label_file) or not os.path.exists(image_file):
-            print('【警告】文件不存在  --------file:  {} '.format(label_file))
-            return
-
-        with open(label_file, 'r', encoding='utf-8') as f:
-            lines = f.readlines()
-
-        lines = do_merge_box(lines)
-
-        bg_image = cv2.imread(image_file)
-        raw_image = cv2.imread(image_file)
-
-
-        for index, line in enumerate(lines):
-            if len(line) < 8:
+        for j in range(len(box_list)):
+            if box_map[_box_to_line(box_list[j])] or i == j:
                 continue
+            if box_list[j]['width'] < 150 \
+                    and abs(box_list[j]['left'] - box_list[i]['right']) < 9 \
+                    and abs(box_list[j]['top'] - box_list[i]['top']) < 9 \
+                    and abs(box_list[j]['bottom'] - box_list[i]['bottom']) < 9:
 
-            points = line.split(',')
-            left = int(points[0]) if int(points[6]) > int(points[0]) else int(points[6])
-            right = int(points[2]) if int(points[4]) < int(points[2]) else int(points[4])
-            top = int(points[1]) if int(points[3]) > int(points[1]) else int(points[3])
-            bottom = int(points[5]) if int(points[7]) < int(points[5]) else int(points[7])
-            height = bottom - top
-            width = right - left
+                # 添加新的box ， 删除两个旧的box
 
-            colors = (0, 0, 255)
-            if index == 189:
-                print(line)
-                print("left={}  right={}  top={} bottom={}".format(left, right, top, bottom))
+                top = box_list[i]['top']
+                if box_list[j]['top'] < box_list[i]['top']:
+                    top = box_list[j]['top']
 
-
-
-
-            # cv2.fillPoly(bg_image, [pts], (255, 255, 255))
-            roi_corners=np.array([[(int(points[0]), int(points[1])),
-                                   (int(points[2]), int(points[3])),
-                                   (int(points[4]), int(points[5])),
-                                   (int(points[6]), int(points[7]))]], dtype=np.int32)
-            mask = np.ones(bg_image.shape, dtype=np.uint8)
-            channels=bg_image.shape[2]
-            #输入点的坐标
-            channel_count=channels
-            ignore_mask_color = (255,)*channel_count
-            #创建mask层
-            cv2.fillPoly(mask, roi_corners, ignore_mask_color)
-            #为每个像素进行与操作，除mask区域外，全为0
-            masked_image = cv2.bitwise_and(bg_image, mask)
-            c_img = masked_image[top: int(top + height), left: int(left + width)]
-            cv2.imwrite(os.path.join(self.output_dir, '{}.jpg'.format(index)), c_img)
-
-            # 画矩形框
-            pts = np.array([[int(points[0]), int(points[1])],
-                            [int(points[2]), int(points[3])],
-                            [int(points[4]), int(points[5])],
-                            [int(points[6]), int(points[7])]], np.int32)  # 每个点都是(x, y)
-            pts = roi_corners.reshape((-1, 1, 2))
-            cv2.polylines(bg_image, [pts], True, (0, 0, 255))
-            # cv2.rectangle(bg_image, (left, top), (left+width, top+height), colors, 1)
+                bottom = box_list[i]['bottom']
+                if box_list[j]['bottom'] > box_list[i]['bottom']:
+                    bottom = box_list[j]['bottom']
 
 
-        cv2.imwrite(label_image_file, bg_image)
-        print('【输出】生成合格后的图片{} .'.format(label_image_file))
+                new_box = {
+                    'left': box_list[i]['left'],
+                    'right': box_list[j]['right'],
+
+                    'width': box_list[j]['right'] - box_list[i]['left'],
+                    'height': bottom - top,
+
+                    'top': top,
+                    'bottom': bottom
+                }
+
+                box_map[_box_to_line(box_list[i])] = True
+                box_map[_box_to_line(box_list[j])] = True
+                _delete_row_in_list(new_box_lines, _box_to_line(box_list[i]))
+                _delete_row_in_list(new_box_lines, _box_to_line(box_list[j]))
+                new_box_lines.append(_box_to_line(new_box))
+                merge_flag = True
+
+                # print(' 合并  {} === {} '.format(box_to_line(box_list[i]), box_to_line(box_list[j])))
+                total_count += 1
+        if not merge_flag:
+            new_box_lines.append(box_list[i]['raw_line'])
+
+    #print("合并了 {}个 box".format(total_count))
+    #print("总共 {}个 box".format(len(new_box_lines)))
+    return new_box_lines, total_count
 
 
+def do_merge_box(new_lines):
 
-    def main(self):
-        time_start = time.time()
-        # Argument parsing
-        args = self.parse_arguments()
-        if os.path.exists(args.output_dir):
-            shutil.rmtree(args.output_dir)
+    max_merge_count = 5
+    for i in range(max_merge_count):
+        new_lines, total_count = _do_merge_inline(new_lines)
+        if total_count == 0:
+            break
 
-        try:
-            os.makedirs(args.output_dir)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+    return new_lines
 
-        if not os.path.exists(args.input_dir):
-            print("输入路径不能为空  input_dir[{}] ".format(args.input_dir))
-            return
-        self.parse_file_list(args.input_dir, args.output_dir)
+def find_boundary_from_line(line):
+    """
+    从一行返回top  left  bottom  right
+    """
+    points = line.replace("\n", '').split(',')
+    left = int(points[0]) if int(points[6]) > int(points[0]) else int(points[6])
+    right = int(points[2]) if int(points[4]) < int(points[2]) else int(points[4])
+    top = int(points[1]) if int(points[3]) > int(points[1]) else int(points[3])
+    bottom = int(points[5]) if int(points[7]) < int(points[5]) else int(points[7])
+    height = bottom - top
+    width = right - left
 
-        time_elapsed = time.time() - time_start
-        print('The code run {:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
-
-
-if __name__ == "__main__":
-    mergeBox = MergeBox()
-    mergeBox.main()
+    return top, bottom, left, right
