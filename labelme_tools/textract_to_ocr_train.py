@@ -151,7 +151,7 @@ class GenerateLabelmeFormat(object):
             print("top={} left={} width={} height={}  confidence={} text:[{}]  file: {} ".format(top, left, new_w, new_h, item['Confidence'], text, sub_image_name))
             cv2.imwrite(os.path.join(output_dir,  sub_image_name), resize_img)
 
-            line = "{} {}\n".format(sub_image_name, text)
+            line = "{}\t{}\n".format(sub_image_name, text)
             new_lines += line
 
 
