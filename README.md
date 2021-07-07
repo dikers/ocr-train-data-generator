@@ -61,6 +61,11 @@ sh textract.sh
 
 textract.sh 会运行下面的程序， 修改相关参数
 ```
+# input_dir   图片和识别后的json 文件 保存路径， 在一个文件夹下， json 是textract 格式
+# output_dir   输出文件路径
+# -c  置信度阈值 confidence_threshold = 0.98
+# -f  输出图片的固定高度  fixed_height = 48
+
 python ../labelme_tools/textract_to_ocr_train.py \
 --input_dir='../../ocr_data/001/image' \
 --output_dir='../../ocr_data/001/output/' \
