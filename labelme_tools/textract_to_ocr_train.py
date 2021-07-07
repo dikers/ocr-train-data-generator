@@ -10,10 +10,7 @@ import math
 
 
 DEBUG = True
-#置信度阈值
-confidence_threshold = 0.98
-# 输出图片的固定高度
-fixed_height = 48
+
 
 class GenerateLabelmeFormat(object):
 
@@ -45,6 +42,24 @@ class GenerateLabelmeFormat(object):
             nargs="?",
             help="输入文件路径",
             required=True
+        )
+        
+        parser.add_argument(
+            "-f",
+            "--fixed_height",
+            type=int,
+            nargs="?",
+            help="输出图片的固定高度",
+            default=48
+        )
+        
+        parser.add_argument(
+            "-c",
+            "--confidence_threshold",
+            type=float,
+            nargs="?",
+            help="输出图片的固定高度",
+            default=0.98
         )
 
         return parser.parse_args()
@@ -100,7 +115,7 @@ class GenerateLabelmeFormat(object):
         new_lines = ''
 
         for index, item in enumerate(json_data['Blocks']):
-            if item['BlockType'] != "WORD" or  item['Confidence']< confidence_threshold  :
+            if item['BlockType'] != "WORD" or  item['Confidence']< self.confidence_threshold  :
                 continue
 
             points = item['Geometry']['Polygon'] 
@@ -130,10 +145,10 @@ class GenerateLabelmeFormat(object):
             if c_img.shape[0] < 10 or c_img.shape[1] < 10:
                 continue
 
-            scale = fixed_height / height
-            new_w, new_h = int(width * scale), fixed_height
+            scale = self.fixed_height / height
+            new_w, new_h = int(width * scale), self.fixed_height
             resize_img = cv2.resize(c_img, (new_w, new_h))
-            print("top={} left={} width={} height={} text:[{}]  file: {} ".format(top, left, new_w, new_h, text, sub_image_name))
+            print("top={} left={} width={} height={}  confidence={} text:[{}]  file: {} ".format(top, left, new_w, new_h, item['Confidence'], text, sub_image_name))
             cv2.imwrite(os.path.join(output_dir,  sub_image_name), resize_img)
 
             line = "{} {}\n".format(sub_image_name, text)
@@ -160,6 +175,11 @@ class GenerateLabelmeFormat(object):
         if not os.path.exists(args.input_dir):
             print("输入路径不能为空  input_dir[{}] ".format(args.input_dir))
             return
+    
+        self.fixed_height            = args.fixed_height
+        self.confidence_threshold    = args.confidence_threshold
+        print("fixed_height:[{}]   confidence_threshold:[{}]".format(self.fixed_height, self.confidence_threshold))
+        
         self.parse_file_list(args.input_dir, args.output_dir)
 
         time_elapsed = time.time() - time_start

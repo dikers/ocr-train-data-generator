@@ -49,3 +49,23 @@ test002.json
 用labelme 工具 打开 `../output/` 文件夹
 
 [Labelme 数据标注工具](https://github.com/wkentaro/labelme)
+
+
+### Textract 格式数据生成训练数据
+
+
+```
+cd label_tools
+sh textract.sh
+```
+
+textract.sh 会运行下面的程序， 修改相关参数
+```
+python ../labelme_tools/textract_to_ocr_train.py \
+--input_dir='../../ocr_data/001/image' \
+--output_dir='../../ocr_data/001/output/' \
+-f=48 \
+-c=0.99
+```
+
+
