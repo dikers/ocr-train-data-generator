@@ -77,21 +77,31 @@ class GenerateLabelmeFormat(object):
             files_grabbed.extend(glob.glob(os.path.join(input_dir, files)))
 
         files_grabbed.sort()
-        total_lines = ''
+        total_correct_lines = ''
+        total_wrong_lines = ''
         for index, file in enumerate(files_grabbed):
             json_file = os.path.join(input_dir, file.split('/')[-1].split('.')[0] + '.json')
             
             if os.path.exists(json_file):
-                new_lines = self.create_label(json_file, file, output_dir)
-                total_lines += new_lines
+                correct_lines, wrong_lines = self.create_label(json_file, file, output_dir)
+                total_correct_lines += correct_lines
+                total_wrong_lines += wrong_lines
             else:
                 print("  {} 不存在 ".format(json_file))
 
-        gt_labels_file = os.path.join(output_dir, 'label.txt')
-        with open(gt_labels_file, "w") as f:
-            f.write(total_lines)
-            print('【输出】生成 lambelme 格式文件  输出路径{}, 文件个数 {} , 文件大小 {}.'.format(gt_labels_file, len(files_grabbed), len(total_lines)))
+        correct_gt_labels_file = os.path.join(self.output_dir_correct, 'label.txt')
+        wrong_gt_labels_file = os.path.join(self.output_dir_wrong, 'label.txt')
+        with open(correct_gt_labels_file, "w") as f:
+            f.write(total_correct_lines)
+            print('【输出】生成 lambelme 格式文件  输出路径{}, 文件个数 {} , 识别正确文件大小 {}.'.format(correct_gt_labels_file, 
+                                                                                len(files_grabbed), len(total_correct_lines)))
 
+        with open(wrong_gt_labels_file, "w") as f:
+            f.write(total_wrong_lines)
+            print('【输出】生成 lambelme 格式文件  输出路径{}, 文件个数 {} , 识别错误文件大小 {}.'.format(wrong_gt_labels_file, 
+                                                                                len(files_grabbed), len(total_wrong_lines)))
+    
+            
 
     def create_label(self, json_file, image_file, output_dir):
 
@@ -112,10 +122,13 @@ class GenerateLabelmeFormat(object):
         image_width = bg_image.shape[1]
         print('{}  width={} height={}'.format(image_file, image_width, image_height))
 
-        new_lines = ''
+        
+        
+        wrong_lines = ''
+        correct_lines = ''
 
         for index, item in enumerate(json_data['Blocks']):
-            if item['BlockType'] != "WORD" or  item['Confidence']< self.confidence_threshold  :
+            if item['BlockType'] != "WORD" :
                 continue
 
             points = item['Geometry']['Polygon'] 
@@ -149,13 +162,19 @@ class GenerateLabelmeFormat(object):
             new_w, new_h = int(width * scale), self.fixed_height
             resize_img = cv2.resize(c_img, (new_w, new_h))
             print("top={} left={} width={} height={}  confidence={} text:[{}]  file: {} ".format(top, left, new_w, new_h, item['Confidence'], text, sub_image_name))
-            cv2.imwrite(os.path.join(output_dir,  sub_image_name), resize_img)
 
-            line = "{}\t{}\n".format(sub_image_name, text)
-            new_lines += line
+            
+            if item['Confidence']< self.confidence_threshold :
+                cv2.imwrite(os.path.join(self.output_dir_wrong,  sub_image_name), resize_img)
+                line = "{}\t{}\t{}\n".format(sub_image_name, text, item['Confidence'])
+                wrong_lines += line
+                
+            else:
+                cv2.imwrite(os.path.join(self.output_dir_correct,  sub_image_name), resize_img)
+                line = "{}\t{}\n".format(sub_image_name, text)
+                correct_lines += line
 
-
-        return new_lines
+        return correct_lines, wrong_lines
 
 
     def main(self):
@@ -166,8 +185,13 @@ class GenerateLabelmeFormat(object):
             shutil.rmtree(args.output_dir)
 
         try:
-            os.makedirs(os.path.join(args.output_dir,"image"))
+            
             self.output_dir = args.output_dir
+            self.output_dir_correct = os.path.join(args.output_dir,"correct") 
+            self.output_dir_wrong   = os.path.join(args.output_dir,"wrong") 
+            os.makedirs(os.path.join(self.output_dir_correct,"image"))
+            os.makedirs(os.path.join(self.output_dir_wrong,"image"))
+            
         except OSError as e:
             if e.errno != errno.EEXIST:
                 raise
