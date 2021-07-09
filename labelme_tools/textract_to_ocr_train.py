@@ -140,7 +140,7 @@ class GenerateLabelmeFormat(object):
 
 
             c_img = bg_image[int(top): int(top + height), int(left): int(left + width)]
-            sub_image_name = image_file.split('/')[-1].replace('.', '_')+'_'+str(index).zfill(5)+".jpg"
+            sub_image_name = 'image/' + image_file.split('/')[-1].replace('.', '_')+'_'+str(index).zfill(5)+".jpg"
 
             if c_img.shape[0] < 10 or c_img.shape[1] < 10:
                 continue
@@ -166,7 +166,7 @@ class GenerateLabelmeFormat(object):
             shutil.rmtree(args.output_dir)
 
         try:
-            os.makedirs(args.output_dir)
+            os.makedirs(os.path.join(args.output_dir,"image"))
             self.output_dir = args.output_dir
         except OSError as e:
             if e.errno != errno.EEXIST:
