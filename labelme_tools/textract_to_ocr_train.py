@@ -80,7 +80,7 @@ class GenerateLabelmeFormat(object):
         total_correct_lines = ''
         total_wrong_lines = ''
         for index, file in enumerate(files_grabbed):
-            json_file = os.path.join(input_dir, file.split('/')[-1].split('.')[0] + '.json')
+            json_file = os.path.join(input_dir, file.split(os.sep)[-1].split('.')[0] + '.json')
             
             if os.path.exists(json_file):
                 correct_lines, wrong_lines = self.create_label(json_file, file, output_dir)
@@ -157,7 +157,7 @@ class GenerateLabelmeFormat(object):
                 height += 1
 
             c_img = bg_image[int(top): int(top + height), int(left): int(left + width)]
-            sub_image_name = 'image/' + image_file.split('/')[-1].replace('.', '_')+'_'+str(index).zfill(5)+".jpg"
+            sub_image_name = 'image/' + image_file.split(os.sep)[-1].replace('.', '_')+'_'+str(index).zfill(5)+".jpg"
 
             if c_img.shape[0] < 10 or c_img.shape[1] < 10:
                 continue
