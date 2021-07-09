@@ -145,12 +145,16 @@ class GenerateLabelmeFormat(object):
                 top = int(points[1]['Y'] * image_height) 
 
 
-            width = int(abs(points[1]['X']  - points[0]['X']) * image_width)
-            height = int(abs(points[3]['Y']  - points[0]['Y']) * image_height)
+            width = int(abs(points[1]['X']  - points[0]['X']) * image_width) 
+            height = int(abs(points[3]['Y']  - points[0]['Y']) * image_height) 
             text = item['Text'].lstrip().rstrip()
 
 
+            if width< image_width:
+                width += 1
 
+            if height < image_height:
+                height += 1
 
             c_img = bg_image[int(top): int(top + height), int(left): int(left + width)]
             sub_image_name = 'image/' + image_file.split('/')[-1].replace('.', '_')+'_'+str(index).zfill(5)+".jpg"
